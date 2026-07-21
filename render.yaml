@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: tiy
+    env: docker
+    plan: free
+    autoDeploy: true
