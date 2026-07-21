@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TIY</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 25px;
+      min-height: 100vh;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .box {
+      width: 100%;
+      max-width: 500px;
+      background: #202020;
+      padding: 25px;
+      border-radius: 18px;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      border: 0;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input, select {
+      background: #333;
+      color: white;
+    }
+
+    button {
+      margin-top: 25px;
+      background: white;
+      color: black;
+      font-weight: bold;
+    }
+
+    button:disabled {
+      opacity: .5;
+    }
+
+    #status {
+      margin-top: 20px;
+      color: #ccc;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h1>TIY</h1>
+    <p>حوّل الفيديو الطويل إلى مقاطع قصيرة.</p>
+
+    <form id="form">
+      <label>اختر الفيديو</label>
+      <input type="file" name="video" accept="video/*" required>
+
+      <label>عدد المقاطع</label>
+      <select name="clips_count">
+        <option value="3">3 مقاطع</option>
+        <option value="5" selected>5 مقاطع</option>
+        <option value="7">7 مقاطع</option>
+        <option value="10">10 مقاطع</option>
+      </select>
+
+      <label>مدة كل مقطع</label>
+      <select name="clip_duration">
+        <option value="15">15 ثانية</option>
+        <option value="30" selected>30 ثانية</option>
+        <option value="45">45 ثانية</option>
+        <option value="60">60 ثانية</option>
+      </select>
+
+      <button id="button" type="submit">إنشاء المقاطع</button>
+    </form>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("form");
+    const button = document.getElementById("button");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      button.disabled = true;
+      button.textContent = "جارٍ المعالجة...";
+      status.textContent = "انتظر حتى ينتهي قص الفيديو.";
+
+      try {
+        const response = await fetch("/api/create-clips", {
+          method: "POST",
+          body: new FormData(form)
+        });
+
+        const type = response.headers.get("content-type") || "";
+
+        if (type.includes("application/json")) {
+          const error = await response.json();
+          throw new Error(error.error || "حدث خطأ");
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "TIY_clips.zip";
+        link.click();
+
+        URL.revokeObjectURL(url);
+        status.textContent = "تم إنشاء المقاطع وتحميلها.";
+      } catch (error) {
+        status.textContent = "حدث خطأ: " + error.message;
+      }
+
+      button.disabled = false;
+      button.textContent = "إنشاء المقاطع";
+    });
+  </script>
+</body>
+</html>
